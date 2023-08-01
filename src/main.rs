@@ -43,7 +43,7 @@ struct Cli {
     html: std::path::PathBuf,
 
     #[arg(long, short, default_value_t = 1)]
-    duration: u64 
+    delay: u64 
 }
 
 fn read_receivers_file(content: String) -> Result<Vec<Receiver>, Box<dyn Error>>{
@@ -104,7 +104,7 @@ fn main() {
 
         println!("Sending message to {}", receiver_str);
         mailer.send(&email).expect("Failed to send email");
-        sleep(time::Duration::from_secs(args.duration))
+        sleep(time::Duration::from_secs(args.delay))
     }
 
     println!("All email sent!");
