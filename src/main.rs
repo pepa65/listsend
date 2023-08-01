@@ -1,4 +1,4 @@
-use std::{fs, string, error::Error, thread::sleep, time, fmt::format};
+use std::{fs, error::Error, thread::sleep, time};
 use dotenv::dotenv;
 use lettre::{SmtpTransport, transport::smtp::authentication::Credentials, Transport, Message, message::header::ContentType};
 use clap::Parser;
@@ -22,11 +22,11 @@ struct EnvConfig {
 impl EnvConfig {
     pub fn new() -> Self {
         Self {
-            smtp_host: std::env::var("SMTP_HOST").unwrap(),
-            smtp_port: std::env::var("SMTP_PORT").unwrap().parse::<u16>().unwrap(),
-            smtp_pass: std::env::var("SMTP_PASS").unwrap(),
-            smtp_user: std::env::var("SMTP_USER").unwrap(),
-            smtp_from: std::env::var("SMTP_FROM").unwrap(),
+            smtp_host: std::env::var("SMTP_HOST").expect("SMTP_HOST should be set in .env"),
+            smtp_port: std::env::var("SMTP_PORT").expect("SMTP_PORT should be set in .env").parse::<u16>().unwrap(),
+            smtp_pass: std::env::var("SMTP_PASS").expect("SMTP_PASS should be set in .env"),
+            smtp_user: std::env::var("SMTP_USER").expect("SMTP_USER should be set in .env"),
+            smtp_from: std::env::var("SMTP_FROM").expect("SMTP_FROM should be set in .env"),
         }
     }
 }
