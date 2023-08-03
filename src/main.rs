@@ -93,7 +93,7 @@ fn main() {
     let mailer = create_mailer(&env);
 
     for receiver in receivers {
-        let receiver_str = format!("{} <{}>", &receiver.name, &receiver.email);
+        let receiver_str = format!("\"{}\" <{}>", &receiver.name, &receiver.email);
         let email = Message::builder()
             .from(env.smtp_from.parse().unwrap())
             .to(receiver_str.parse().unwrap())
