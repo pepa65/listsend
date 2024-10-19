@@ -1,8 +1,8 @@
 [package]
 name = "listsend"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["github.com/pepa65 <pepa65@passchier.net>"]
-description = "Send emails to CSV list from template"
+description = "Send emails to CSV list from template on CLI"
 repository = "https://github.com/pepa/listsend"
 edition = "2021"
 license = "MIT/Apache-2.0"
