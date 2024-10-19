@@ -17,9 +17,9 @@ jobs:
           - stable
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - run: |
-        apt-get -y install musl-tools
+        sudo apt-get -y install musl-tools
         rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
         rustup target add x86_64-unknown-linux-musl
         cargo add openssl-sys
