@@ -1,5 +1,5 @@
 use std::{fs, error::Error, thread::sleep, time};
-use dotenv::dotenv;
+use dotenv::from_path;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::message::header::ContentType;
 use lettre::{Message, SmtpTransport, Transport};
@@ -15,20 +15,26 @@ struct Csv {
 #[derive(Debug)]
 struct EnvConfig {
     smtp_host: String,
-    smtp_port: u16,
-    smtp_pass: String,
+    smtp_port: u16, // Default 465
     smtp_user: String,
+    smtp_pass: String,
     smtp_from: String,
+    subject: String,
+    html: String, // Default unset
+    delay: u64, // Default 1
 }
 
 impl EnvConfig {
-    pub fn new() -> Self {
+    pub fn check_or_default() -> Self {
         Self {
-            smtp_host: std::env::var("SMTP_HOST").expect("SMTP_HOST must be set in .env"),
-            smtp_port: std::env::var("SMTP_PORT").expect("SMTP_PORT must be set in .env").parse::<u16>().unwrap(),
-            smtp_pass: std::env::var("SMTP_PASS").expect("SMTP_PASS must be set in .env"),
-            smtp_user: std::env::var("SMTP_USER").expect("SMTP_USER must be set in .env"),
-            smtp_from: std::env::var("SMTP_FROM").expect("SMTP_FROM must be set in .env"),
+            smtp_host: std::env::var("SENDLIST_HOST").expect("SENDLIST_HOST must be set"),
+            smtp_port: std::env::var("SENDLIST_PORT").unwrap_or("465".to_string()).parse::<u16>().unwrap(),
+            smtp_user: std::env::var("SENDLIST_USER").expect("SENDLIST_USER must be set"),
+            smtp_pass: std::env::var("SENDLIST_PASSWORD").expect("SENDLIST_PASSWORD must be set"),
+            smtp_from: std::env::var("SENDLIST_FROM").expect("SENDLIST_FROM must be set"),
+            subject: std::env::var("SENDLIST_SUBJECT").expect("SENDLIST_SUBJECT must be set"),
+            html: std::env::var("SENDLIST_HTML").unwrap_or("".to_string()),
+            delay: std::env::var("SENDLIST_DELAY").unwrap_or("1".to_string()).parse::<u64>().unwrap(),
         }
     }
 }
@@ -49,18 +55,17 @@ struct Cli {
     #[arg(short, long, default_value = "email.tpl")]
     template: std::path::PathBuf,
 
-    /// Subject of the email
-    #[arg(short, long)]
-    subject: String,
+    /// SMTP config file
+    #[arg(short, long, default_value = SMTP_ENV)]
+    smtp: std::path::PathBuf,
 
-    /// Email template is html [default: plain text]
-    #[arg(short = 'H', long)]
-    html: bool,
-
-    /// Delay between mails in seconds
-    #[arg(short, long, default_value_t = 1)]
-    delay: u64,
+    /// Email config file
+    #[arg(short, long, default_value = EMAIL_ENV)]
+    email: std::path::PathBuf,
 }
+
+const SMTP_ENV: &str = "./smtp.env";
+const EMAIL_ENV: &str = "./email.env";
 
 fn read_csv_file(content: String) -> Result<Vec<Csv>, Box<dyn Error>>{
     let mut csv = Vec::new();
@@ -87,23 +92,24 @@ fn create_mailer(env: &EnvConfig) -> SmtpTransport {
 }
 
 fn main() {
-    let mut err = 0;
     let args = Cli::parse();
-    dotenv().ok();
-    let env = EnvConfig::new();
+    from_path(&args.smtp).ok();
+    from_path(&args.email).ok();
+    let env = EnvConfig::check_or_default();
     let csv_content = fs::read_to_string(&args.csv).expect("could not read csv file");
     let template_content = fs::read_to_string(&args.template).expect("could not read template file");
     let csv = read_csv_file(csv_content).expect("Failed to read csv file with header: name,email,data");
     let mut hbs = handlebars::Handlebars::new();
     hbs.register_template_string("mail", template_content.clone()).expect("Failed to read template file content");
     let mailer = create_mailer(&env);
+    let mut err = 0;
     for line in &csv {
         let csv_str = format!("\"{}\" <{}>", &line.name, &line.email);
         let email = Message::builder()
             .from(env.smtp_from.parse().unwrap())
             .to(csv_str.parse().unwrap())
-            .subject(&args.subject)
-            .header(if args.html {ContentType::TEXT_HTML} else {ContentType::TEXT_PLAIN})
+            .subject(&env.subject)
+            .header(if env.html.len() > 0 {ContentType::TEXT_HTML} else {ContentType::TEXT_PLAIN})
             .body(hbs.render("mail", &line).unwrap())
             .unwrap();
         print!("--- Sending to: {} ", csv_str);
@@ -114,7 +120,7 @@ fn main() {
                 err += 1;
             },
         };
-        sleep(time::Duration::from_secs(args.delay));
+        sleep(time::Duration::from_secs(env.delay));
     }
     if err > 0 {
         println!("### Failed to send: {err}");

@@ -1,6 +1,6 @@
 [package]
 name = "listsend"
-version = "0.2.2"
+version = "0.3.0"
 authors = ["github.com/pepa65 <pepa65@passchier.net>"]
 description = "Send emails to CSV list from template on CLI"
 keywords = ["email", "bulk", "cli", "template", "csv"]
