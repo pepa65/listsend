@@ -1,14 +1,16 @@
 use std::{fs, error::Error, thread::sleep, time};
 use dotenv::dotenv;
-use lettre::{SmtpTransport, transport::smtp::authentication::Credentials, Transport, Message, message::header::ContentType};
+use lettre::transport::smtp::authentication::Credentials;
+use lettre::message::header::ContentType;
+use lettre::{Message, SmtpTransport, Transport};
 use clap::Parser;
 use serde::Serialize;
 
 #[derive(Serialize)]
-struct Receiver {
+struct Csv {
     name: String, 
     email: String,
-    registration_url: String 
+    data: String 
 }
 #[derive(Debug)]
 struct EnvConfig {
@@ -22,44 +24,56 @@ struct EnvConfig {
 impl EnvConfig {
     pub fn new() -> Self {
         Self {
-            smtp_host: std::env::var("SMTP_HOST").expect("SMTP_HOST should be set in .env"),
-            smtp_port: std::env::var("SMTP_PORT").expect("SMTP_PORT should be set in .env").parse::<u16>().unwrap(),
-            smtp_pass: std::env::var("SMTP_PASS").expect("SMTP_PASS should be set in .env"),
-            smtp_user: std::env::var("SMTP_USER").expect("SMTP_USER should be set in .env"),
-            smtp_from: std::env::var("SMTP_FROM").expect("SMTP_FROM should be set in .env"),
+            smtp_host: std::env::var("SMTP_HOST").expect("SMTP_HOST must be set in .env"),
+            smtp_port: std::env::var("SMTP_PORT").expect("SMTP_PORT must be set in .env").parse::<u16>().unwrap(),
+            smtp_pass: std::env::var("SMTP_PASS").expect("SMTP_PASS must be set in .env"),
+            smtp_user: std::env::var("SMTP_USER").expect("SMTP_USER must be set in .env"),
+            smtp_from: std::env::var("SMTP_FROM").expect("SMTP_FROM must be set in .env"),
         }
     }
 }
 
-#[derive(Parser)]
+#[derive(Parser, Debug)]
+#[command(author, version, about)]
+#[command(help_template("\
+{before-help}{name} {version} - {about}
+{usage-heading} {usage}
+{all-args}{after-help}
+"))]
 struct Cli {
-    // Receivers file path (csv)
-    // Note that the file should have the format `name,email` comma delimited
-    #[arg(short = 'r', long)]
-    receivers: std::path::PathBuf,
+    /// CSV file (name,email,data)
+    #[arg(short, long, default_value = "list.csv")]
+    csv: std::path::PathBuf,
 
-    // The html file path
-    #[arg(long)]
-    html: std::path::PathBuf,
+    /// Email template file
+    #[arg(short, long, default_value = "email.tpl")]
+    template: std::path::PathBuf,
 
-    #[arg(long, short, default_value_t = 1)]
-    delay: u64 
+    /// Subject of the email
+    #[arg(short, long)]
+    subject: String,
+
+    /// Email template is html [default: plain text]
+    #[arg(short = 'H', long)]
+    html: bool,
+
+    /// Delay between mails in seconds
+    #[arg(short, long, default_value_t = 1)]
+    delay: u64,
 }
 
-fn read_receivers_file(content: String) -> Result<Vec<Receiver>, Box<dyn Error>>{
-    let mut receivers = Vec::new();
+fn read_csv_file(content: String) -> Result<Vec<Csv>, Box<dyn Error>>{
+    let mut csv = Vec::new();
     let mut reader = csv::Reader::from_reader(content.as_bytes());
-
     for result in reader.records() {
         let record = result?;
-        receivers.push(Receiver {
+        csv.push(Csv {
             name: record.get(0).unwrap().into(),
             email: record.get(1).unwrap().into(),
-            registration_url: "#".into(),
+            data: record.get(2).unwrap().into(),
         })
     }
-
-    Ok(receivers)
+    Ok(csv)
 }
 
 fn create_mailer(env: &EnvConfig) -> SmtpTransport {
@@ -73,39 +87,37 @@ fn create_mailer(env: &EnvConfig) -> SmtpTransport {
 }
 
 fn main() {
+    let mut err = 0;
     let args = Cli::parse();
     dotenv().ok();
-
     let env = EnvConfig::new();
-
-    // Parse the files
-    let receivers_content = fs::read_to_string(&args.receivers).expect("could not read receivers file");
-    let html_content = fs::read_to_string(&args.html).expect("could not read html file");
-
-    // Parse receivers content file
-    let receivers = read_receivers_file(receivers_content).expect("Failed to read receivers content file. Please follow the csv format (name,email) comma separated.");
-
-    // Parse html file
+    let csv_content = fs::read_to_string(&args.csv).expect("could not read csv file");
+    let template_content = fs::read_to_string(&args.template).expect("could not read template file");
+    let csv = read_csv_file(csv_content).expect("Failed to read csv file with header: name,email,data");
     let mut hbs = handlebars::Handlebars::new();
-    hbs.register_template_string("mail", html_content).expect("Failed to read template file content");
-
-    // Setup email
+    hbs.register_template_string("mail", template_content.clone()).expect("Failed to read template file content");
     let mailer = create_mailer(&env);
-
-    for receiver in receivers {
-        let receiver_str = format!("\"{}\" <{}>", &receiver.name, &receiver.email);
+    for line in &csv {
+        let csv_str = format!("\"{}\" <{}>", &line.name, &line.email);
         let email = Message::builder()
             .from(env.smtp_from.parse().unwrap())
-            .to(receiver_str.parse().unwrap())
-            .subject("TeknumConf Invitaton")
-            .header(ContentType::TEXT_HTML)
-            .body(hbs.render("mail", &receiver).unwrap())
+            .to(csv_str.parse().unwrap())
+            .subject(&args.subject)
+            .header(if args.html {ContentType::TEXT_HTML} else {ContentType::TEXT_PLAIN})
+            .body(hbs.render("mail", &line).unwrap())
             .unwrap();
-
-        println!("Sending message to {}", receiver_str);
-        mailer.send(&email).expect("Failed to send email");
-        sleep(time::Duration::from_secs(args.delay))
+        print!("--- Sending to: {} ", csv_str);
+        match mailer.send(&email) {
+            Ok(_) => println!(""),
+            Err(e) => {
+                println!("### Failed: {:?}", e);
+                err += 1;
+            },
+        };
+        sleep(time::Duration::from_secs(args.delay));
     }
-
-    println!("All email sent!");
+    if err > 0 {
+        println!("### Failed to send: {err}");
+    }
+    println!("=== All emails processed");
 }

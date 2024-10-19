@@ -1,17 +1,25 @@
 [package]
-name = "emsend"
-version = "0.1.0"
+name = "listsend"
+version = "0.2.0"
+authors = ["github.com/pepa65 <pepa65@passchier.net>"]
+description = "Send emails to CSV list from template"
+repository = "https://github.com/pepa/listsend"
 edition = "2021"
 license = "MIT/Apache-2.0"
-description = "Send bulk email with your own HTML template"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 clap = { version = "4.3.19", features = ["derive"] }
 csv = "1.2.2"
 dotenv = "0.15.0"
 handlebars = "4.3.7"
-lettre = "0.10.4"
+lettre = "0.11.9"
+openssl-sys = { version = "0.9.104", features = ["vendored"] }
 serde = { version = "1.0.180", features = ["derive"] }
 serde_json = "1.0.104"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
