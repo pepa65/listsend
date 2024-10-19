@@ -1,9 +1,9 @@
 use std::{fs, error::Error, thread::sleep, time};
+use clap::Parser;
 use dotenv::from_path;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::message::header::ContentType;
 use lettre::{Message, SmtpTransport, Transport};
-use clap::Parser;
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -48,11 +48,11 @@ impl EnvConfig {
 "))]
 struct Cli {
     /// CSV file (name,email,data)
-    #[arg(short, long, default_value = "list.csv")]
+    #[arg(short, long, default_value = "./list.csv")]
     csv: std::path::PathBuf,
 
     /// Email template file
-    #[arg(short, long, default_value = "email.tpl")]
+    #[arg(short, long, default_value = "./email.tpl")]
     template: std::path::PathBuf,
 
     /// SMTP config file
