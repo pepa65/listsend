@@ -62,6 +62,10 @@ struct Cli {
     /// Email config file
     #[arg(short, long, default_value = EMAIL_ENV)]
     email: std::path::PathBuf,
+
+    /// Output readme file from repo
+    #[arg(short, long)]
+    readme: bool,
 }
 
 const SMTP_ENV: &str = "./smtp.env";
@@ -93,6 +97,10 @@ fn create_mailer(env: &EnvConfig) -> SmtpTransport {
 
 fn main() {
     let args = Cli::parse();
+    if args.readme {
+        print!("{}", include_str!("../README.md"));
+        return;
+    }
     from_path(&args.smtp).ok();
     from_path(&args.email).ok();
     let env = EnvConfig::check_or_default();

@@ -1,7 +1,7 @@
 [![Cargo build](https://github.com/pepa65/listsend/actions/workflows/rust.yml/badge.svg)](https://github.com/pepa65/listsend/actions/workflows/rust.yml)
 [![downloads](https://img.shields.io/crates/d/listsend.svg)](https://crates.io/crates/listsend)
 
-# listsend 0.3.1
+# listsend 0.3.2
 **Send emails to CSV list from template on CLI**
 
 * License: MIT/Apache-2.0
@@ -11,7 +11,7 @@
 
 ## Install static single-binary
 ```
-wget https://github.com/pepa65/listsend/releases/download/0.3.1/listsend
+wget https://github.com/pepa65/listsend/releases/download/0.3.2/listsend
 sudo mv listsend /usr/local/bin
 sudo chown root:root /usr/local/bin/listsend
 sudo chmod +x /usr/local/bin/listsend
@@ -42,13 +42,14 @@ The binary will be at `target/x86_64-unknown-linux-musl/release/listsend`
 
 ## Usage
 ```
-listsend 0.3.1 - Send emails to CSV list from template on CLI
+listsend 0.3.2 - Send emails to CSV list from template on CLI
 Usage: listsend [OPTIONS]
 Options:
   -c, --csv <CSV>            CSV file (name,email,data) [default: ./list.csv]
   -t, --template <TEMPLATE>  Email template file [default: ./email.tpl]
   -s, --smtp <SMTP>          SMTP config file [default: ./smtp.env]
   -e, --email <EMAIL>        Email config file [default: ./email.env]
+  -r, --readme               Output readme file from repo
   -h, --help                 Print help
   -V, --version              Print version
 ```
@@ -65,9 +66,9 @@ Copy the files in `example` to your working directory:
   `SENDLIST_HTML` (default: unset), `SENDLIST_DELAY` (default: 1 second).
 * All fields above will be overridden by any corresponding environment variable
   that can be set like: `export SENDLIST_DELAY=0`.
-* Edit `email.tpl` to the desired content, the fields `{{name}}`. `{{email}}`
+* Edit `email.tpl` to the desired content, the fields `{{name}}`, `{{email}}`
   and `{{data}}` can be used in the template file.
-  The template can be plain text (default) or html: set `HTML` to something.
+  The template can be plain text (default) or html: set `SENDLIST_HTML` to something.
 * Edit `list.csv` for the recipient's data, where the column header is
   `name,email,data` and following lines specify each recipient.
   The fields `name` and `email` are mandatory, `data` is optional.
