@@ -112,6 +112,8 @@ fn main() {
     let mailer = create_mailer(&env);
     let mut err = 0;
     for line in &csv {
+        if line.email.bytes().len() == 0 { continue; }
+        if line.email.bytes().nth(0) == Some(b'#') { continue; }
         let csv_str = format!("\"{}\" <{}>", &line.name, &line.email);
         let email = Message::builder()
             .from(env.smtp_from.parse().unwrap())

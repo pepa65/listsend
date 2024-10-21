@@ -1,7 +1,7 @@
 [![Cargo build](https://github.com/pepa65/listsend/actions/workflows/rust.yml/badge.svg)](https://github.com/pepa65/listsend/actions/workflows/rust.yml)
 [![downloads](https://img.shields.io/crates/d/listsend.svg)](https://crates.io/crates/listsend)
 
-# listsend 0.3.2
+# listsend 0.3.3
 **Send emails to CSV list from template on CLI**
 
 * License: MIT/Apache-2.0
@@ -11,7 +11,7 @@
 
 ## Install static single-binary
 ```
-wget https://github.com/pepa65/listsend/releases/download/0.3.2/listsend
+wget https://github.com/pepa65/listsend/releases/download/0.3.3/listsend
 sudo mv listsend /usr/local/bin
 sudo chown root:root /usr/local/bin/listsend
 sudo chmod +x /usr/local/bin/listsend
@@ -42,7 +42,7 @@ The binary will be at `target/x86_64-unknown-linux-musl/release/listsend`
 
 ## Usage
 ```
-listsend 0.3.2 - Send emails to CSV list from template on CLI
+listsend 0.3.23 - Send emails to CSV list from template on CLI
 Usage: listsend [OPTIONS]
 Options:
   -c, --csv <CSV>            CSV file (name,email,data) [default: ./list.csv]
@@ -72,6 +72,7 @@ Copy the files in `example` to your working directory:
 * Edit `list.csv` for the recipient's data, where the column header is
   `name,email,data` and following lines specify each recipient.
   The fields `name` and `email` are mandatory, `data` is optional.
+  If `#` is used as the first character of a line, it gets ignored.
 * Any of the above files can be set on the commandline as well to override the
   default name & path.
 
