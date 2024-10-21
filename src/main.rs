@@ -2,7 +2,7 @@ use std::{fs, error::Error, thread::sleep, time};
 use clap::Parser;
 use dotenv::from_path;
 use lettre::transport::smtp::authentication::Credentials;
-use lettre::message::header::{ContentType, ContentTransferEncoding};
+use lettre::message::header::ContentType;
 use lettre::{Message, SmtpTransport, Transport};
 use serde::Serialize;
 
@@ -112,7 +112,6 @@ fn main() {
     let mailer = create_mailer(&env);
     let mut err = 0;
     for line in &csv {
-        if line.bytes().len() == 0 { continue; }
         if line.name.bytes().nth(0) == Some(b'#') { continue; }
         let csv_str = format!("\"{}\" <{}>", &line.name, &line.email);
         let email = Message::builder()
