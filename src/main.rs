@@ -73,7 +73,10 @@ const EMAIL_ENV: &str = "./email.env";
 
 fn read_csv_file(content: String) -> Result<Vec<Csv>, Box<dyn Error>>{
     let mut csv = Vec::new();
-    let mut reader = csv::Reader::from_reader(content.as_bytes());
+    let mut reader = csv::ReaderBuilder::new()
+        .flexible(true)
+        .comment(Some(b'#'))
+        .from_reader(content.as_bytes());
     for result in reader.records() {
         let record = result?;
         csv.push(Csv {
@@ -105,24 +108,24 @@ fn main() {
     from_path(&args.email).ok();
     let env = EnvConfig::check_or_default();
     let html = env.html != "" && env.html != "no" && env.html != "unset" && env.html != "0" && env.html != "false";
-    let csv_content = fs::read_to_string(&args.csv).expect("could not read csv file");
-    let template_content = fs::read_to_string(&args.template).expect("could not read template file");
-    let csv = read_csv_file(csv_content).expect("Failed to read csv file with header: name,email,data");
+    let template = fs::read_to_string(&args.template).expect("failed to read template file");
+    let csv_content = fs::read_to_string(&args.csv).expect("failed to read csv file");
+    let csv = read_csv_file(csv_content.clone()).expect("Failed to parse csv file");
     let mut hbs = handlebars::Handlebars::new();
-    hbs.register_template_string("mail", template_content.clone()).expect("Failed to read template file content");
+    hbs.register_template_string("body", template.clone()).expect("Failed to read template file content");
+    hbs.register_template_string("subject", env.subject.clone()).expect("Subject must be set");
     let mailer = create_mailer(&env);
     let mut err = 0;
     for line in &csv {
-        if line.name.bytes().nth(0) == Some(b'#') { continue; }
-        let csv_str = format!("\"{}\" <{}>", &line.name, &line.email);
+        let to = format!("\"{}\" <{}>", &line.name, &line.email);
         let email = Message::builder()
             .from(env.smtp_from.parse().unwrap())
-            .to(csv_str.parse().unwrap())
-            .subject(&env.subject)
+            .to(to.parse().unwrap())
             .header(if html {ContentType::TEXT_HTML} else {ContentType::TEXT_PLAIN})
-            .body(hbs.render("mail", &line).unwrap())
+            .subject(hbs.render("subject", &line).unwrap())
+            .body(hbs.render("body", &line).unwrap())
             .unwrap();
-        print!("--- Sending to: {} ", csv_str);
+        print!("--- Sending to: {} ", to);
         match mailer.send(&email) {
             Ok(_) => println!(""),
             Err(e) => {
@@ -131,7 +134,7 @@ fn main() {
             },
         };
         sleep(time::Duration::from_secs(env.delay));
-    }
+    };
     if err > 0 {
         println!("### Failed to send: {err}");
     }

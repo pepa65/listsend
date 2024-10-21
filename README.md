@@ -1,7 +1,7 @@
 [![Cargo build](https://github.com/pepa65/listsend/actions/workflows/rust.yml/badge.svg)](https://github.com/pepa65/listsend/actions/workflows/rust.yml)
 [![downloads](https://img.shields.io/crates/d/listsend.svg)](https://crates.io/crates/listsend)
 
-# listsend 0.3.5
+# listsend 0.3.6
 **Send emails to CSV list from template on CLI**
 
 * License: MIT/Apache-2.0
@@ -11,7 +11,7 @@
 
 ## Install static single-binary
 ```
-wget https://github.com/pepa65/listsend/releases/download/0.3.5/listsend
+wget https://github.com/pepa65/listsend/releases/download/0.3.6/listsend
 sudo mv listsend /usr/local/bin
 sudo chown root:root /usr/local/bin/listsend
 sudo chmod +x /usr/local/bin/listsend
@@ -42,7 +42,7 @@ The binary will be at `target/x86_64-unknown-linux-musl/release/listsend`
 
 ## Usage
 ```
-listsend 0.3.5 - Send emails to CSV list from template on CLI
+listsend 0.3.6 - Send emails to CSV list from template on CLI
 Usage: listsend [OPTIONS]
 Options:
   -c, --csv <CSV>            CSV file (name,email,data) [default: ./list.csv]
@@ -67,7 +67,7 @@ Copy the files in `example` to your working directory:
 * All fields above will be overridden by any corresponding environment variable
   that can be set like: `export SENDLIST_DELAY=0`.
 * Edit `email.tpl` to the desired content, the fields `{{name}}`, `{{email}}`
-  and `{{data}}` can be used in the template file.
+  and `{{data}}` can be used in the template file and `SENDLIST_SUBJECT`.
   The template can be plain text (default) or html: set `SENDLIST_HTML` to something
   other than `no`, `unset`, `false`, `0` or empty.
 * Edit `list.csv` for the recipient's data, where the column header is
