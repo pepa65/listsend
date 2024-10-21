@@ -104,6 +104,7 @@ fn main() {
     from_path(&args.smtp).ok();
     from_path(&args.email).ok();
     let env = EnvConfig::check_or_default();
+    let html = env.html != "" && env.html != "no" && env.html != "unset" && env.html != "0" && env.html != "false";
     let csv_content = fs::read_to_string(&args.csv).expect("could not read csv file");
     let template_content = fs::read_to_string(&args.template).expect("could not read template file");
     let csv = read_csv_file(csv_content).expect("Failed to read csv file with header: name,email,data");
@@ -118,7 +119,7 @@ fn main() {
             .from(env.smtp_from.parse().unwrap())
             .to(csv_str.parse().unwrap())
             .subject(&env.subject)
-            .header(if env.html.len() > 0 {ContentType::TEXT_HTML} else {ContentType::TEXT_PLAIN})
+            .header(if html {ContentType::TEXT_HTML} else {ContentType::TEXT_PLAIN})
             .body(hbs.render("mail", &line).unwrap())
             .unwrap();
         print!("--- Sending to: {} ", csv_str);
