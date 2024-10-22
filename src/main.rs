@@ -1,43 +1,14 @@
 use std::{fs, error::Error, thread::sleep, time};
 use clap::Parser;
 use dotenv::from_path;
-use lettre::transport::smtp::authentication::Credentials;
-use lettre::message::header::ContentType;
 use lettre::{Message, SmtpTransport, Transport};
+use lettre::message::{MultiPart, SinglePart};
+use lettre::message::header::{ContentTransferEncoding, ContentType};
+use lettre::transport::smtp::authentication::Credentials;
 use serde::Serialize;
 
-#[derive(Serialize)]
-struct Csv {
-    name: String, 
-    email: String,
-    data: String 
-}
-#[derive(Debug)]
-struct EnvConfig {
-    smtp_host: String,
-    smtp_port: u16, // Default 465
-    smtp_user: String,
-    smtp_pass: String,
-    smtp_from: String,
-    subject: String,
-    html: String, // Default unset
-    delay: u64, // Default 1
-}
-
-impl EnvConfig {
-    pub fn check_or_default() -> Self {
-        Self {
-            smtp_host: std::env::var("SENDLIST_HOST").expect("SENDLIST_HOST must be set"),
-            smtp_port: std::env::var("SENDLIST_PORT").unwrap_or("465".to_string()).parse::<u16>().unwrap(),
-            smtp_user: std::env::var("SENDLIST_USER").expect("SENDLIST_USER must be set"),
-            smtp_pass: std::env::var("SENDLIST_PASSWORD").expect("SENDLIST_PASSWORD must be set"),
-            smtp_from: std::env::var("SENDLIST_FROM").expect("SENDLIST_FROM must be set"),
-            subject: std::env::var("SENDLIST_SUBJECT").expect("SENDLIST_SUBJECT must be set"),
-            html: std::env::var("SENDLIST_HTML").unwrap_or("".to_string()),
-            delay: std::env::var("SENDLIST_DELAY").unwrap_or("1".to_string()).parse::<u64>().unwrap(),
-        }
-    }
-}
+const SMTP_ENV: &str = "./smtp.env";
+const EMAIL_ENV: &str = "./email.env";
 
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
@@ -68,8 +39,40 @@ struct Cli {
     readme: bool,
 }
 
-const SMTP_ENV: &str = "./smtp.env";
-const EMAIL_ENV: &str = "./email.env";
+#[derive(Serialize)]
+struct Csv {
+    name: String, 
+    email: String,
+    data: String 
+}
+#[derive(Debug)]
+struct EnvConfig {
+    smtp_host: String,
+    smtp_port: u16, // Default 465
+    smtp_user: String,
+    smtp_pass: String,
+    smtp_from: String,
+    subject: String,
+    html: String, // Default unset
+    attachment: String, // Default unset
+    delay: u64, // Default 1
+}
+
+impl EnvConfig {
+    pub fn check_or_default() -> Self {
+        Self {
+            smtp_host: std::env::var("SENDLIST_HOST").expect("SENDLIST_HOST must be set"),
+            smtp_port: std::env::var("SENDLIST_PORT").unwrap_or("465".to_string()).parse::<u16>().unwrap(),
+            smtp_user: std::env::var("SENDLIST_USER").expect("SENDLIST_USER must be set"),
+            smtp_pass: std::env::var("SENDLIST_PASSWORD").expect("SENDLIST_PASSWORD must be set"),
+            smtp_from: std::env::var("SENDLIST_FROM").expect("SENDLIST_FROM must be set"),
+            subject: std::env::var("SENDLIST_SUBJECT").expect("SENDLIST_SUBJECT must be set"),
+            html: std::env::var("SENDLIST_HTML").unwrap_or("".to_string()),
+            attachment: std::env::var("SENDLIST_ATTACHMENT").unwrap_or("".to_string()),
+            delay: std::env::var("SENDLIST_DELAY").unwrap_or("1".to_string()).parse::<u64>().unwrap(),
+        }
+    }
+}
 
 fn read_csv_file(content: String) -> Result<Vec<Csv>, Box<dyn Error>>{
     let mut csv = Vec::new();
@@ -115,28 +118,66 @@ fn main() {
     hbs.register_template_string("body", template.clone()).expect("Failed to read template file content");
     hbs.register_template_string("subject", env.subject.clone()).expect("Subject must be set");
     let mailer = create_mailer(&env);
+    let mut n = 0;
     let mut err = 0;
-    for line in &csv {
-        let to = format!("\"{}\" <{}>", &line.name, &line.email);
-        let email = Message::builder()
-            .from(env.smtp_from.parse().unwrap())
-            .to(to.parse().unwrap())
-            .header(if html {ContentType::TEXT_HTML} else {ContentType::TEXT_PLAIN})
-            .subject(hbs.render("subject", &line).unwrap())
-            .body(hbs.render("body", &line).unwrap())
-            .unwrap();
-        print!("--- Sending to: {} ", to);
-        match mailer.send(&email) {
-            Ok(_) => println!(""),
-            Err(e) => {
-                println!("### Failed: {:?}", e);
-                err += 1;
-            },
+    if env.attachment.to_owned().len() > 0 {
+        let binary = ContentType::parse("application/octet-stream").unwrap();
+        let attachment = fs::read(env.attachment.clone()).expect("failed to read attachment");
+        let attname = env.attachment.split("/").last().unwrap().to_string();
+        let att = SinglePart::builder()
+            .header(ContentTransferEncoding::Base64)
+            .header(binary.clone())
+            .header(lettre::message::header::ContentDisposition::attachment(&attname))
+            .body(attachment.clone());
+        for line in &csv {
+            let to = format!("\"{}\" <{}>", &line.name, &line.email);
+            print!("--- Sending to: {to} ");
+            let email = Message::builder()
+                .from(env.smtp_from.parse().unwrap())
+                .to(to.parse().unwrap())
+                .subject(hbs.render("subject", &line).unwrap())
+                .multipart(MultiPart::mixed()
+                    .singlepart(SinglePart::builder()
+                        .header(if html {ContentType::TEXT_HTML} else {ContentType::TEXT_PLAIN})
+                        .body(hbs.render("body", &line).unwrap())
+                    )
+                    .singlepart(att.clone())
+                )
+                .unwrap();
+            match mailer.send(&email) {
+                Ok(_) => println!(""),
+                Err(e) => {
+                    println!("### Failed: {:?}", e);
+                    err += 1;
+                },
+            };
+            n += 1;
+            sleep(time::Duration::from_secs(env.delay));
         };
-        sleep(time::Duration::from_secs(env.delay));
+    } else {
+        for line in &csv {
+            let to = format!("\"{}\" <{}>", &line.name, &line.email);
+            print!("--- Sending to: {to} ");
+            let email = Message::builder()
+                .from(env.smtp_from.parse().unwrap())
+                .to(to.parse().unwrap())
+                .header(if html {ContentType::TEXT_HTML} else {ContentType::TEXT_PLAIN})
+                .subject(hbs.render("subject", &line).unwrap())
+                .body(hbs.render("body", &line).unwrap())
+                .unwrap();
+            match mailer.send(&email) {
+                Ok(_) => println!(""),
+                Err(e) => {
+                    println!("### Failed: {:?}", e);
+                    err += 1;
+                },
+            };
+            n += 1;
+            sleep(time::Duration::from_secs(env.delay));
+        }
     };
     if err > 0 {
         println!("### Failed to send: {err}");
-    }
-    println!("=== All emails processed");
+    };
+    println!("=== Processed {n} mails");
 }
