@@ -4,3 +4,4 @@
 /smtp.env
 /email.env
 /listsend
+/Cargo.lock

@@ -6,11 +6,12 @@ use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 use serde::Serialize;
 use std::{error::Error, fs, thread::sleep, time};
+use tap::Pipe;
 
 const SMTP_ENV: &str = "./smtp.env";
 const EMAIL_ENV: &str = "./email.env";
-const LIST_CSV: &str = "./list.csv";
 const EMAIL_TPL: &str = "./email.tpl";
+const LIST_CSV: &str = "./list.csv";
 const SMTP_PORT: &str = "465";
 
 #[derive(Parser, Debug)]
@@ -51,7 +52,6 @@ struct Csv {
 	data: String,
 }
 
-#[rustfmt::skip]
 #[derive(Debug)]
 struct EnvConfig {
 	smtp_host: String,
@@ -61,9 +61,9 @@ struct EnvConfig {
 	smtp_from: String,
 	reply_to: String,
 	subject: String,
-	html: String, // Default unset
+	html: String,       // Default unset
 	attachment: String, // Default unset
-	delay: u64, // Default 1
+	delay: u64,         // Default 1
 }
 
 impl EnvConfig {
@@ -130,14 +130,11 @@ fn main() {
 		for line in &csv {
 			let to = format!("\"{}\" <{}>", &line.name, &line.email);
 			print!("--- Sending to: {to} ");
-			let mut email = Message::builder()
-				.subject(hbs.render("subject", &line).unwrap())
+			let email = Message::builder()
 				.from(env.smtp_from.parse().unwrap())
-				.to(to.parse().unwrap());
-			if env.reply_to.len() > 0 {
-				email = email.reply_to(env.reply_to.parse().unwrap());
-			};
-			match mailer.send(&email
+				.to(to.parse().unwrap())
+				.pipe(|r| if true { r.reply_to(env.reply_to.parse().unwrap()) } else { r })
+				.subject(hbs.render("subject", &line).unwrap())
 				.multipart(
 					MultiPart::mixed()
 						.singlepart(
@@ -147,8 +144,8 @@ fn main() {
 						)
 						.singlepart(att.clone()),
 				)
-				.unwrap()
-			) {
+				.unwrap();
+			match mailer.send(&email) {
 				Ok(_) => println!(""),
 				Err(e) => {
 					println!("### Failed: {:?}", e);
@@ -162,18 +159,15 @@ fn main() {
 		for line in &csv {
 			let to = format!("\"{}\" <{}>", &line.name, &line.email);
 			print!("--- Sending to: {to} ");
-			let mut email = Message::builder()
-				.subject(hbs.render("subject", &line).unwrap())
+			let email = Message::builder()
 				.from(env.smtp_from.parse().unwrap())
-				.to(to.parse().unwrap());
-			if env.reply_to.len() > 0 {
-				email = email.reply_to(env.reply_to.parse().unwrap());
-			};
-			match mailer.send(&email
-				.header(if html {ContentType::TEXT_HTML} else {ContentType::TEXT_PLAIN})
+				.to(to.parse().unwrap())
+				.pipe(|r| if true { r.reply_to(env.reply_to.parse().unwrap()) } else { r })
+				.header(if html { ContentType::TEXT_HTML } else { ContentType::TEXT_PLAIN })
+				.subject(hbs.render("subject", &line).unwrap())
 				.body(hbs.render("body", &line).unwrap())
-				.unwrap()
-			) {
+				.unwrap();
+			match mailer.send(&email) {
 				Ok(_) => println!(""),
 				Err(e) => {
 					println!("### Failed: {:?}", e);
