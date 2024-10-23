@@ -1,6 +1,6 @@
 /target
-email.tpl
-list.csv
-smtp.env
-email.env
-listsend
+/email.tpl
+/list.csv
+/smtp.env
+/email.env
+/listsend
