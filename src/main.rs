@@ -5,7 +5,7 @@ use lettre::message::{MultiPart, SinglePart};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 use serde::Serialize;
-use std::{error::Error, fs, thread::sleep, time};
+use std::{error::Error, fs, path::PathBuf, thread::sleep, time};
 use tap::Pipe;
 
 const SMTP_ENV: &str = "./smtp.env";
@@ -66,19 +66,29 @@ struct EnvConfig {
 	delay: u64,         // Default 1
 }
 
+fn get_env(var: &str, val: &str) -> String {
+	if std::env::var(var).unwrap_or_default().is_empty() {
+		val.to_string()
+	} else {
+		std::env::var(var).unwrap()
+	}
+}
+
 impl EnvConfig {
-	pub fn check_or_default() -> Self {
+	pub fn check_or_default(smtp: PathBuf, email: PathBuf) -> Self {
+		from_path(smtp).ok();
+		from_path(email).ok();
 		Self {
 			smtp_host: std::env::var("SENDLIST_HOST").expect("SENDLIST_HOST must be set"),
-			smtp_port: std::env::var("SENDLIST_PORT").unwrap_or(SMTP_PORT.to_string()).parse::<u16>().unwrap(),
+			smtp_port: get_env("SENDLIST_PORT", SMTP_PORT).parse::<u16>().unwrap(),
 			smtp_user: std::env::var("SENDLIST_USER").expect("SENDLIST_USER must be set"),
 			smtp_pass: std::env::var("SENDLIST_PASSWORD").expect("SENDLIST_PASSWORD must be set"),
 			smtp_from: std::env::var("SENDLIST_FROM").expect("SENDLIST_FROM must be set"),
-			reply_to: std::env::var("SENDLIST_REPLY_TO").unwrap_or("".to_string()),
+			reply_to: get_env("SENDLIST_REPLY_TO", ""),
 			subject: std::env::var("SENDLIST_SUBJECT").expect("SENDLIST_SUBJECT must be set"),
-			html: std::env::var("SENDLIST_HTML").unwrap_or("".to_string()),
-			attachment: std::env::var("SENDLIST_ATTACHMENT").unwrap_or("".to_string()),
-			delay: std::env::var("SENDLIST_DELAY").unwrap_or("1".to_string()).parse::<u64>().unwrap(),
+			html: get_env("SENDLIST_HTML", ""),
+			attachment: get_env("SENDLIST_ATTACHMENT", ""),
+			delay: get_env("SENDLIST_DELAY", "1").parse::<u64>().unwrap(),
 		}
 	}
 }
@@ -105,9 +115,7 @@ fn main() {
 		print!("{}", include_str!("../README.md"));
 		return;
 	}
-	from_path(&args.smtp).ok();
-	from_path(&args.email).ok();
-	let env = EnvConfig::check_or_default();
+	let env = EnvConfig::check_or_default(args.smtp, args.email);
 	let html = env.html != "" && env.html != "no" && env.html != "unset" && env.html != "0" && env.html != "false";
 	let template = fs::read_to_string(&args.template).expect("failed to read template file");
 	let csv_content = fs::read_to_string(&args.csv).expect("failed to read csv file");
@@ -118,7 +126,7 @@ fn main() {
 	let mailer = create_mailer(&env);
 	let mut n = 0;
 	let mut err = 0;
-	if env.attachment.to_owned().len() > 0 {
+	if !env.attachment.to_owned().is_empty() {
 		let binary = ContentType::parse("application/octet-stream").unwrap();
 		let attachment = fs::read(env.attachment.clone()).expect("failed to read attachment");
 		let attname = env.attachment.split("/").last().unwrap().to_string();
@@ -133,7 +141,7 @@ fn main() {
 			let email = Message::builder()
 				.from(env.smtp_from.parse().unwrap())
 				.to(to.parse().unwrap())
-				.pipe(|r| if true { r.reply_to(env.reply_to.parse().unwrap()) } else { r })
+				.pipe(|r| if !env.reply_to.is_empty() { r.reply_to(env.reply_to.parse().unwrap()) } else { r })
 				.subject(hbs.render("subject", &line).unwrap())
 				.multipart(
 					MultiPart::mixed()
