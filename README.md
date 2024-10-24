@@ -63,6 +63,7 @@ Copy the files in `example` to your working directory:
   `SENDLIST_HOST`, `SENDLIST_PORT` (default: 465), `SENDLIST_USER`,
   `SENDLIST_PASSWORD` and `SENDLIST_FROM`, all are mandatory.
 * Edit `email.env` with the data for the email: `SENDLIST_REPLY_TO` (default: none),
+  `SENDLIST_CC` (default: none), `SENDLIST_BCC` (default: none),
   `SENDLIST_SUBJECT` (mandatory), `SENDLIST_HTML` (default: plain text),
   `SENDLIST_ATTACHMENT` (default: none), `SENDLIST_DELAY` (default: 1 second).
 * All fields above will be overridden by any corresponding environment variable
@@ -76,6 +77,7 @@ Copy the files in `example` to your working directory:
   `name,email,data` and following lines specify each recipient.
   The fields `name` and `email` are mandatory, `data` is optional.
   If `#` is used as the first character of a line, it gets ignored.
+* Any field/variable that takes an email address can do so as a single email,
+  or in the mailbox format: 'Some Name <email@address.to>', but only one!
 * Any of the above files can be set on the commandline as well to override the
   default name & path.
-

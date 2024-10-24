@@ -54,13 +54,15 @@ struct Csv {
 
 #[derive(Debug)]
 struct EnvConfig {
-	smtp_host: String,
-	smtp_port: u16, // Default 465
-	smtp_user: String,
-	smtp_pass: String,
-	smtp_from: String,
-	reply_to: String,
-	subject: String,
+	smtp_host: String,  // Mandatory
+	smtp_port: u16,     // Default 465
+	smtp_user: String,  // Mandatory
+	smtp_pass: String,  // Mandatory
+	smtp_from: String,  // Mandatory
+	reply_to: String,   // Default unset
+	cc: String,         // Default unset
+	bcc: String,        // Default unset
+	subject: String,    // Default unset
 	html: String,       // Default unset
 	attachment: String, // Default unset
 	delay: u64,         // Default 1
@@ -85,7 +87,9 @@ impl EnvConfig {
 			smtp_pass: std::env::var("SENDLIST_PASSWORD").expect("SENDLIST_PASSWORD must be set"),
 			smtp_from: std::env::var("SENDLIST_FROM").expect("SENDLIST_FROM must be set"),
 			reply_to: get_env("SENDLIST_REPLY_TO", ""),
-			subject: std::env::var("SENDLIST_SUBJECT").expect("SENDLIST_SUBJECT must be set"),
+			cc: get_env("SENDLIST_CC", ""),
+			bcc: get_env("SENDLIST_BCC", ""),
+			subject: get_env("SENDLIST_SUBJECT", ""),
 			html: get_env("SENDLIST_HTML", ""),
 			attachment: get_env("SENDLIST_ATTACHMENT", ""),
 			delay: get_env("SENDLIST_DELAY", "1").parse::<u64>().unwrap(),
@@ -141,7 +145,9 @@ fn main() {
 			let email = Message::builder()
 				.from(env.smtp_from.parse().unwrap())
 				.to(to.parse().unwrap())
-				.pipe(|r| if !env.reply_to.is_empty() { r.reply_to(env.reply_to.parse().unwrap()) } else { r })
+				.pipe(|o| if env.reply_to.is_empty() { o } else { o.reply_to(env.reply_to.parse().unwrap()) })
+				.pipe(|o| if env.cc.is_empty() { o } else { o.cc(env.cc.parse().unwrap()) })
+				.pipe(|o| if env.bcc.is_empty() { o } else { o.bcc(env.bcc.parse().unwrap()) })
 				.subject(hbs.render("subject", &line).unwrap())
 				.multipart(
 					MultiPart::mixed()
@@ -170,7 +176,9 @@ fn main() {
 			let email = Message::builder()
 				.from(env.smtp_from.parse().unwrap())
 				.to(to.parse().unwrap())
-				.pipe(|r| if true { r.reply_to(env.reply_to.parse().unwrap()) } else { r })
+				.pipe(|o| if env.reply_to.is_empty() { o } else { o.reply_to(env.reply_to.parse().unwrap()) })
+				.pipe(|o| if env.cc.is_empty() { o } else { o.cc(env.cc.parse().unwrap()) })
+				.pipe(|o| if env.bcc.is_empty() { o } else { o.bcc(env.bcc.parse().unwrap()) })
 				.header(if html { ContentType::TEXT_HTML } else { ContentType::TEXT_PLAIN })
 				.subject(hbs.render("subject", &line).unwrap())
 				.body(hbs.render("body", &line).unwrap())
