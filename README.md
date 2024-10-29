@@ -1,7 +1,7 @@
 [![Cargo build](https://github.com/pepa65/listsend/actions/workflows/rust.yml/badge.svg)](https://github.com/pepa65/listsend/actions/workflows/rust.yml)
 [![downloads](https://img.shields.io/crates/d/listsend.svg)](https://crates.io/crates/listsend)
 
-# listsend 0.4.5
+# listsend 0.4.6
 **Send emails to CSV list from template on CLI**
 
 * License: MIT/Apache-2.0
@@ -11,7 +11,7 @@
 
 ## Install static single-binary
 ```
-wget https://github.com/pepa65/listsend/releases/download/0.4.5/listsend
+wget https://github.com/pepa65/listsend/releases/download/0.4.6/listsend
 sudo mv listsend /usr/local/bin
 sudo chown root:root /usr/local/bin/listsend
 sudo chmod +x /usr/local/bin/listsend
@@ -40,9 +40,25 @@ cargo rel  # Alias defined in .cargo/config.toml
 
 The binary will be at `target/x86_64-unknown-linux-musl/release/listsend`
 
+## Install with cargo-binstall
+Even without a full Rust toolchain, rust binaries can be installed with the static binary `cargo-binstall`:
+
+```
+# Install cargo-binstall for Linux x86_64
+# (Other versions are available at https://crates.io/crates/cargo-binstall)
+wget github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz
+tar xf cargo-binstall-x86_64-unknown-linux-musl.tgz
+sudo chown root:root cargo-binstall
+sudo mv cargo-binstall /usr/local/bin/
+```
+
+Only a linux-x86_64 (musl) binary available: `cargo-binstall listsend`
+
+It will be installed in `~/.cargo/bin/` which still needs to be added to `PATH`!
+
 ## Usage
 ```
-listsend 0.4.5 - Send emails to CSV list from template on CLI
+listsend 0.4.6 - Send emails to CSV list from template on CLI
 Usage: listsend [OPTIONS]
 Options:
   -c, --csv <CSV>            CSV file (name,email,data) [default: ./list.csv]

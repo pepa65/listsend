@@ -1,12 +1,19 @@
 [package]
 name = "listsend"
-version = "0.4.5"
+version = "0.4.6"
 authors = ["github.com/pepa65 <pepa65@passchier.net>", "Ahmad Saugi <saugi.dev@gmail.com>"]
 description = "Send emails to CSV list from template on CLI"
 keywords = ["email", "cli", "template", "csv", "attachment"]
 repository = "https://github.com/pepa/listsend"
 edition = "2021"
 license = "MIT/Apache-2.0"
+
+[package.metadata.binstall]
+pkg-url = "{repo}/releases/download/{version}/{name}"
+pkg-fmt = "bin"
+disabled-strategies = ["quick-install", "compile"]
+target-family = "Linux"
+target-arch = "X86_64"
 
 [dependencies]
 clap = { version = "4.3.19", features = ["derive"] }
@@ -16,7 +23,6 @@ handlebars = "4.3.7"
 lettre = { version = "0.11.9", features = ["builder"] }
 openssl-sys = { version = "0.9.104", features = ["vendored"] }
 serde = { version = "1.0.180", features = ["derive"] }
-serde_json = "1.0.104"
 tap = "1.0.1"
 
 [profile.release]
