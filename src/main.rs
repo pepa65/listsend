@@ -109,8 +109,7 @@ fn read_csv_file(content: String) -> Result<Vec<Csv>, Box<dyn Error>> {
 
 fn create_mailer(env: &EnvConfig) -> SmtpTransport {
 	let creds = Credentials::new(env.smtp_user.clone(), env.smtp_pass.clone());
-	let mailer = SmtpTransport::relay(&env.smtp_host).unwrap().port(env.smtp_port).credentials(creds).build();
-	mailer
+	SmtpTransport::relay(&env.smtp_host).unwrap().port(env.smtp_port).credentials(creds).build()
 }
 
 fn main() {
@@ -120,7 +119,7 @@ fn main() {
 		return;
 	}
 	let env = EnvConfig::check_or_default(args.smtp, args.email);
-	let html = env.html != "" && env.html != "no" && env.html != "unset" && env.html != "0" && env.html != "false";
+	let html = !env.html.is_empty() && env.html != "no" && env.html != "unset" && env.html != "0" && env.html != "false";
 	let template = fs::read_to_string(&args.template).expect("failed to read template file");
 	let csv_content = fs::read_to_string(&args.csv).expect("failed to read csv file");
 	let csv = read_csv_file(csv_content.clone()).expect("Failed to parse csv file");
@@ -160,7 +159,7 @@ fn main() {
 				)
 				.unwrap();
 			match mailer.send(&email) {
-				Ok(_) => println!(""),
+				Ok(_) => println!(),
 				Err(e) => {
 					println!("### Failed: {:?}", e);
 					err += 1;
@@ -184,7 +183,7 @@ fn main() {
 				.body(hbs.render("body", &line).unwrap())
 				.unwrap();
 			match mailer.send(&email) {
-				Ok(_) => println!(""),
+				Ok(_) => println!(),
 				Err(e) => {
 					println!("### Failed: {:?}", e);
 					err += 1;
