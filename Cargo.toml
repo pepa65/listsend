@@ -1,6 +1,6 @@
 [package]
 name = "listsend"
-version = "0.4.8"
+version = "0.4.9"
 authors = ["github.com/pepa65 <pepa65@passchier.net>", "Ahmad Saugi <saugi.dev@gmail.com>"]
 description = "Send emails to CSV list from template on CLI"
 keywords = ["email", "cli", "template", "csv", "attachment"]
@@ -31,3 +31,4 @@ lto = true
 codegen-units = 1
 panic = "abort"
 strip = true
+debug = 0
