@@ -1,5 +1,8 @@
 [![Cargo build](https://github.com/pepa65/listsend/actions/workflows/rust.yml/badge.svg)](https://github.com/pepa65/listsend/actions/workflows/rust.yml)
-[![downloads](https://img.shields.io/crates/d/listsend.svg)](https://crates.io/crates/listsend)
+[![Dependencies](https://deps.rs/repo/github/pepa65/listsend/status.svg)](https://deps.rs/repo/github/pepa65/listsend)
+[![Docs](https://img.shields.io/badge/Docs-listsend-blue)](https://docs.rs/crate/listsend/latest)
+[![License](https://img.shields.io/github/license/pepa65/listsend)](https://github.com/pepa65/listsend/blob/main/LICENSE)
+[![Downloads](https://img.shields.io/crates/d/listsend.svg)](https://crates.io/crates/listsend)
 
 # listsend 0.4.10
 **Send emails to CSV list from template on CLI**
