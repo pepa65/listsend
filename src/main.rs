@@ -69,11 +69,7 @@ struct EnvConfig {
 }
 
 fn get_env(var: &str, val: &str) -> String {
-	if std::env::var(var).unwrap_or_default().is_empty() {
-		val.to_string()
-	} else {
-		std::env::var(var).unwrap()
-	}
+	if std::env::var(var).unwrap_or_default().is_empty() { val.to_string() } else { std::env::var(var).unwrap() }
 }
 
 impl EnvConfig {
