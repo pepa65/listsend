@@ -1,12 +1,12 @@
 [package]
 name = "listsend"
-version = "0.4.12"
+version = "0.4.13"
 edition = "2024"
 authors = ["github.com/pepa65 <pepa65@passchier.net>", "Ahmad Saugi <saugi.dev@gmail.com>"]
 description = "Send emails to CSV list from template on CLI"
 repository = "https://github.com/pepa65/listsend"
 keywords = ["email", "cli", "template", "csv", "attachment"]
-documentation = "https://docs.rs/eqr"
+documentation = "https://docs.rs/listsend"
 readme = "README.md"
 license = "MIT/Apache-2.0"
 
