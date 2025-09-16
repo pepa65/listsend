@@ -5,7 +5,7 @@
 [![license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/pepa65/listsend/blob/main/LICENSE)
 [![downloads](https://img.shields.io/crates/d/listsend.svg)](https://crates.io/crates/listsend)
 
-# listsend 0.4.52
+# listsend 0.4.53
 **Send emails to CSV list from template on CLI**
 
 * License: MIT/Apache-2.0
@@ -15,7 +15,7 @@
 
 ## Install static single-binary
 ```
-wget https://github.com/pepa65/listsend/releases/download/0.4.52/listsend
+wget https://github.com/pepa65/listsend/releases/download/0.4.53/listsend
 sudo mv listsend /usr/local/bin
 sudo chown root:root /usr/local/bin/listsend
 sudo chmod +x /usr/local/bin/listsend
@@ -62,7 +62,7 @@ It will be installed in `~/.cargo/bin/` which will need to be added to `PATH`!
 
 ## Usage
 ```
-listsend 0.4.52 - Send emails to CSV list from template on CLI
+listsend 0.4.53 - Send emails to CSV list from template on CLI
 Usage: listsend [OPTIONS]
 Options:
   -c, --csv <CSV>            CSV file (name,email,data) [default: ./list.csv]
