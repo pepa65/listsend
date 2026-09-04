@@ -1,5 +1,5 @@
 use clap::Parser;
-use dotenv::from_path;
+use dotenvy::from_path;
 use lettre::message::header::{ContentTransferEncoding, ContentType};
 use lettre::message::{MultiPart, SinglePart};
 use lettre::transport::smtp::authentication::Credentials;
