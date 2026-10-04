@@ -2,6 +2,7 @@
 name = "listsend"
 version = "0.5.5"
 edition = "2024"
+rust_version = "1.88.0"
 authors = ["github.com/pepa65 <pepa65@passchier.net>", "Ahmad Saugi <saugi.dev@gmail.com>"]
 description = "Send emails to CSV list from template on CLI"
 repository = "https://github.com/pepa65/listsend"
