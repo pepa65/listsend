@@ -135,7 +135,7 @@ fn main() {
 			.header(lettre::message::header::ContentDisposition::attachment(&attname))
 			.body(attachment.clone());
 		for line in &csv {
-			let to = format!("\"{}\" <{}>", &line.name, &line.email);
+			let to = format!("\"{}\" <{}>", line.name, line.email);
 			print!("--- Sending to: {to} ");
 			let email = Message::builder()
 				.from(env.smtp_from.parse().unwrap())
@@ -166,7 +166,7 @@ fn main() {
 		}
 	} else {
 		for line in &csv {
-			let to = format!("\"{}\" <{}>", &line.name, &line.email);
+			let to = format!("\"{}\" <{}>", line.name, line.email);
 			print!("--- Sending to: {to} ");
 			let email = Message::builder()
 				.from(env.smtp_from.parse().unwrap())
